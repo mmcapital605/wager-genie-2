@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "build": "mkdir -p public && cp -r public/* build/",
+    "vercel-build": "npm run build"
   },
   "keywords": [],
   "author": "",
