@@ -1,13 +1,11 @@
 {
     "version": 2,
+    "buildCommand": "npm run build",
+    "outputDirectory": "public",
     "builds": [
         {
             "src": "index.js",
             "use": "@vercel/node"
-        },
-        {
-            "src": "public/**",
-            "use": "@vercel/static"
         }
     ],
     "routes": [
@@ -20,12 +18,11 @@
             "dest": "/public/genie-home.html"
         },
         {
+            "handle": "filesystem"
+        },
+        {
             "src": "/(.*)",
-            "dest": "/public/$1"
+            "dest": "/"
         }
-    ],
-    "env": {
-        "NEXT_PUBLIC_SUPABASE_URL": "@supabase_url",
-        "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase_anon_key"
-    }
+    ]
 } 

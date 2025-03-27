@@ -8,13 +8,17 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+const port = process.env.PORT || 3000;
 
+// CORS configuration
 app.use(cors({
-    origin: 'https://wagergenie.ai',
+    origin: ['https://wagergenie.ai', 'https://wagergenie-frontend.vercel.app'],
     credentials: true
 }));
+
+// Middleware
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Authentication middleware
 const requireAuth = async (req, res, next) => {
@@ -115,7 +119,6 @@ app.post('/api/auth/logout', async (req, res) => {
 app.post('/api/chat', requireAuth, async (req, res) => {
     try {
         const { message } = req.body;
-        // Here you would implement your chat logic
         res.json({ 
             message: "Message received",
             response: "This feature will be available soon!"
@@ -128,7 +131,7 @@ app.post('/api/chat', requireAuth, async (req, res) => {
     }
 });
 
-// Serve the genie-home page for authenticated users
+// Serve static files
 app.get('/genie-home', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'genie-home.html'));
 });
@@ -137,6 +140,13 @@ app.get('/genie-home', (req, res) => {
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+// Start server if not running in Vercel
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(port, () => {
+        console.log(`Server running on port ${port}`);
+    });
+}
 
 // For Vercel serverless deployment
 export default app; 
