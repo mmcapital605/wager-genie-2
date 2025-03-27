@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Genie Home - Login</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #666;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 0.8rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background: #764ba2;
+        }
+
+        .error {
+            color: #dc3545;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .success {
+            color: #28a745;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .toggle-form {
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .toggle-form a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .toggle-form a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to Genie Home</h1>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" required>
+            </div>
+            <div class="error" id="error"></div>
+            <div class="success" id="success"></div>
+            <button type="submit">Login</button>
+        </form>
+        <div class="toggle-form">
+            <p>Don't have an account? <a href="#" id="toggleRegister">Register</a></p>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Supabase client
+        const supabaseUrl = 'YOUR_SUPABASE_URL';
+        const supabaseAnonKey = 'YOUR_SUPABASE_ANON_KEY';
+        const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+        // Check if user is already logged in
+        async function checkAuth() {
+            const { data: { user }, error } = await supabase.auth.getUser();
+            if (user && !error) {
+                window.location.href = '/genie-home';
+            }
+        }
+
+        // Check auth status on page load
+        checkAuth();
+
+        const loginForm = document.getElementById('loginForm');
+        const errorDiv = document.getElementById('error');
+        const successDiv = document.getElementById('success');
+        const toggleRegister = document.getElementById('toggleRegister');
+        let isLogin = true;
+
+        toggleRegister.addEventListener('click', (e) => {
+            e.preventDefault();
+            isLogin = !isLogin;
+            loginForm.querySelector('button').textContent = isLogin ? 'Login' : 'Register';
+            toggleRegister.textContent = isLogin ? 'Register' : 'Login';
+            document.querySelector('h1').textContent = isLogin ? 'Welcome to Genie Home' : 'Create Account';
+            if (!isLogin) {
+                const nameInput = document.createElement('div');
+                nameInput.className = 'form-group';
+                nameInput.innerHTML = `
+                    <label for="name">Name</label>
+                    <input type="text" id="name" required>
+                `;
+                loginForm.insertBefore(nameInput, loginForm.querySelector('button').parentElement);
+            } else {
+                const nameGroup = loginForm.querySelector('#name').parentElement;
+                if (nameGroup) {
+                    loginForm.removeChild(nameGroup);
+                }
+            }
+        });
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                let result;
+                if (isLogin) {
+                    result = await supabase.auth.signInWithPassword({
+                        email,
+                        password
+                    });
+                } else {
+                    const name = document.getElementById('name').value;
+                    result = await supabase.auth.signUp({
+                        email,
+                        password,
+                        options: {
+                            data: {
+                                name
+                            }
+                        }
+                    });
+                }
+
+                if (result.error) {
+                    throw result.error;
+                }
+
+                successDiv.textContent = isLogin ? 'Login successful!' : 'Registration successful!';
+                successDiv.style.display = 'block';
+
+                // Redirect to genie-home after successful login/registration
+                if (isLogin || result.data?.user?.identities?.length > 0) {
+                    setTimeout(() => {
+                        window.location.href = '/genie-home';
+                    }, 1500);
+                } else {
+                    successDiv.textContent += ' Please check your email to confirm your account.';
+                }
+            } catch (error) {
+                errorDiv.textContent = error.message;
+                errorDiv.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html> 
